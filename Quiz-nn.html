@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz Builder — Editor Premium</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    /* ===== BASE ===== */
+    * { margin:0; padding:0; box-sizing:border-box; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    body { background:#f4f6fa; display:flex; justify-content:center; padding:20px; min-height:100vh; color:#0f172a; }
+    .app { max-width:1600px; width:100%; background:rgba(255,255,255,0.5); backdrop-filter:blur(2px); border-radius:40px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.08), 0 0 0 1px rgba(255,255,255,0.6) inset; padding:20px 24px 32px; transition:all 0.2s; }
+    
+    /* ===== TOP BAR ===== */
+    .topbar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px 12px; padding-bottom:18px; border-bottom:1px solid rgba(0,0,0,0.03); margin-bottom:20px; }
+    .topbar-left { display:flex; align-items:center; gap:20px; }
+    .back { font-size:13px; font-weight:500; color:#1e293b; background:rgba(255,255,255,0.5); padding:6px 16px 6px 14px; border-radius:40px; border:1px solid rgba(0,0,0,0.02); cursor:default; transition:0.15s; }
+    .back i { margin-right:8px; font-size:12px; }
+    .back:hover { background:white; box-shadow:0 4px 12px rgba(0,0,0,0.02); }
+    .brand { display:flex; align-items:center; gap:8px; font-weight:600; font-size:15px; letter-spacing:-0.01em; color:#0f172a; }
+    .brand i { color:#2563eb; font-size:17px; }
+    .quiz-status { display:flex; align-items:center; gap:12px; background:rgba(255,255,255,0.3); padding:4px 16px 4px 20px; border-radius:40px; border:1px solid rgba(255,255,255,0.4); }
+    .quiz-status span { font-weight:500; font-size:14px; }
+    .badge-draft { background:#e9edf2; color:#1e293b; font-size:10px; font-weight:600; padding:2px 14px; border-radius:30px; text-transform:uppercase; letter-spacing:0.3px; }
+    .topbar-actions { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+    .btn-ghost { background:rgba(255,255,255,0.4); border:1px solid rgba(0,0,0,0.02); padding:6px 16px; border-radius:30px; font-size:12px; font-weight:500; color:#1e293b; display:flex; align-items:center; gap:6px; transition:0.12s; cursor:default; backdrop-filter:blur(2px); }
+    .btn-ghost i { font-size:12px; opacity:0.5; }
+    .btn-ghost:hover { background:white; box-shadow:0 4px 12px rgba(0,0,0,0.02); }
+    .btn-primary-sm { background:#0f172a; color:white; border:none; padding:6px 20px; border-radius:30px; font-size:12px; font-weight:500; display:flex; align-items:center; gap:6px; transition:0.12s; cursor:default; box-shadow:0 2px 8px rgba(15,23,42,0.06); }
+    .btn-primary-sm i { font-size:12px; }
+    .btn-primary-sm:hover { background:#1e293b; transform:scale(0.97); }
+
+    /* ===== TABS ===== */
+    .tabs { display:flex; gap:4px; background:rgba(255,255,255,0.3); padding:4px; border-radius:60px; margin-bottom:20px; border:1px solid rgba(255,255,255,0.2); backdrop-filter:blur(2px); flex-wrap:wrap; }
+    .tab { padding:8px 20px; border-radius:40px; font-size:13px; font-weight:500; color:#64748b; transition:0.15s; cursor:default; background:transparent; border:none; }
+    .tab i { margin-right:8px; font-size:12px; }
+    .tab.active { background:white; color:#0f172a; box-shadow:0 2px 8px rgba(0,0,0,0.02); }
+    .tab:hover:not(.active) { color:#0f172a; }
+
+    /* ===== EDITOR GRID ===== */
+    .editor-grid { display:grid; grid-template-columns:1fr 1.1fr; gap:28px; }
+    
+    /* ===== LEFT PANEL ===== */
+    .left-panel { background:rgba(255,255,255,0.3); backdrop-filter:blur(4px); border-radius:28px; padding:20px 20px 24px; box-shadow:0 8px 24px rgba(0,0,0,0.01), 0 0 0 1px rgba(255,255,255,0.4) inset; max-height:780px; overflow-y:auto; scroll-behavior:smooth; }
+    .left-panel::-webkit-scrollbar { width:4px; }
+    .left-panel::-webkit-scrollbar-thumb { background:#d1d9e6; border-radius:12px; }
+    
+    .tab-content { display:none; animation:fadeSlide 0.25s ease; }
+    .tab-content.active { display:block; }
+    @keyframes fadeSlide { from { opacity:0.3; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+
+    .section-card { background:rgba(255,255,255,0.5); backdrop-filter:blur(2px); border-radius:20px; padding:18px 20px; margin-bottom:18px; box-shadow:0 4px 12px rgba(0,0,0,0.01), 0 0 0 1px rgba(255,255,255,0.3) inset; transition:0.15s; }
+    .section-card:hover { box-shadow:0 8px 20px rgba(0,0,0,0.01), 0 0 0 1px rgba(255,255,255,0.5) inset; }
+    .section-title { font-size:12px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; color:#64748b; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+    .section-title i { font-size:12px; opacity:0.5; }
+
+    .field-group { display:flex; flex-direction:column; gap:4px; margin-bottom:14px; }
+    .field-group label { font-size:11px; font-weight:500; color:#475569; display:flex; align-items:center; gap:6px; }
+    .field-group label i { font-size:11px; color:#94a3b8; }
+    .field-group input, .field-group select { background:rgba(255,255,255,0.7); border:1px solid #e9edf2; border-radius:14px; padding:9px 14px; font-size:13px; transition:0.12s; color:#0f172a; width:100%; outline:none; }
+    .field-group input:focus, .field-group select:focus { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,0.04); background:white; }
+    .row-duo { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+    /* switches modernos */
+    .switch-group { display:flex; flex-wrap:wrap; gap:10px 20px; margin:4px 0 2px; }
+    .switch-item { display:flex; align-items:center; gap:10px; font-size:13px; font-weight:450; color:#1e293b; }
+    .switch { width:36px; height:20px; background:#d1d9e6; border-radius:40px; position:relative; transition:0.2s; cursor:default; flex-shrink:0; }
+    .switch.active { background:#2563eb; }
+    .switch::after { content:''; width:16px; height:16px; background:white; border-radius:50%; position:absolute; top:2px; left:2px; transition:0.2s cubic-bezier(0.34,1.2,0.64,1); box-shadow:0 2px 4px rgba(0,0,0,0.06); }
+    .switch.active::after { left:18px; }
+
+    /* ===== QUESTION BLOCKS ===== */
+    .question-block { background:rgba(255,255,255,0.5); backdrop-filter:blur(2px); border-radius:18px; padding:14px 16px; margin-bottom:14px; border:1px solid rgba(255,255,255,0.4); transition:0.12s; }
+    .question-block:hover { border-color:rgba(37,99,235,0.08); }
+    .q-row { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+    .q-drag { color:#cbd5e1; font-size:16px; cursor:default; letter-spacing:-2px; }
+    .q-number { font-weight:600; font-size:13px; color:#0f172a; background:rgba(37,99,235,0.04); padding:2px 14px; border-radius:30px; }
+    .q-type-badge { font-size:10px; font-weight:600; color:#475569; background:#f1f5f9; padding:2px 12px; border-radius:30px; }
+    .q-actions { display:flex; gap:6px; margin-left:auto; }
+    .q-actions i { color:#94a3b8; font-size:13px; transition:0.1s; cursor:default; padding:4px; border-radius:8px; }
+    .q-actions i:hover { color:#0f172a; background:rgba(0,0,0,0.02); }
+    .q-collapsed-info { display:flex; gap:16px; margin-top:6px; font-size:12px; color:#64748b; }
+    .q-collapsed-info span { display:flex; align-items:center; gap:4px; }
+    .q-expanded { margin-top:12px; display:block; }
+    .q-expanded .field-group { margin-bottom:8px; }
+    
+    /* answer chips */
+    .answer-chips { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 4px; }
+    .chip { display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,0.6); border:1px solid #e9edf2; border-radius:40px; padding:4px 14px 4px 10px; font-size:12px; font-weight:450; transition:0.1s; cursor:default; }
+    .chip .dot { width:10px; height:10px; border-radius:20px; flex-shrink:0; }
+    .chip .profile-tag { font-size:10px; font-weight:500; color:#64748b; background:rgba(0,0,0,0.02); padding:0 8px; border-radius:20px; }
+    .chip:hover { background:white; border-color:#cbd5e1; }
+    .chip-input { background:transparent; border:none; padding:2px 0; font-size:12px; width:80px; outline:none; }
+    .chip-add { background:transparent; border:1px dashed #cbd5e1; border-radius:40px; padding:4px 14px; font-size:12px; color:#64748b; cursor:default; transition:0.1s; }
+    .chip-add:hover { border-color:#2563eb; color:#2563eb; background:rgba(37,99,235,0.02); }
+
+    .btn-large-add { background:rgba(255,255,255,0.3); border:1px dashed #cbd5e1; border-radius:60px; padding:12px 20px; font-weight:500; color:#1e293b; display:flex; align-items:center; justify-content:center; gap:10px; font-size:14px; transition:0.12s; cursor:default; }
+    .btn-large-add i { color:#2563eb; }
+    .btn-large-add:hover { background:white; border-color:#2563eb; }
+
+    /* ===== LOGIC FLOW ===== */
+    .flow-container { display:flex; flex-direction:column; gap:12px; padding:8px 0; }
+    .flow-node { background:rgba(255,255,255,0.6); border-radius:16px; padding:14px 18px; border-left:3px solid #2563eb; display:flex; align-items:center; gap:12px; }
+    .flow-node .arrow { color:#94a3b8; font-size:18px; }
+    .flow-node .node-label { font-weight:500; font-size:14px; }
+    .flow-node .node-badge { font-size:10px; background:#f1f5f9; padding:2px 12px; border-radius:30px; color:#475569; }
+
+    /* ===== BLOCK LIBRARY FLOATING ===== */
+    .floating-add { position:sticky; bottom:10px; display:flex; justify-content:center; margin-top:12px; }
+    .btn-float { background:#0f172a; color:white; border:none; padding:10px 24px; border-radius:60px; font-weight:500; font-size:14px; display:flex; align-items:center; gap:10px; box-shadow:0 8px 24px rgba(15,23,42,0.12); transition:0.15s; cursor:default; }
+    .btn-float i { font-size:14px; }
+    .btn-float:hover { transform:scale(0.97); background:#1e293b; }
+
+    /* ===== RIGHT PANEL ===== */
+    .right-panel { background:rgba(255,255,255,0.2); backdrop-filter:blur(4px); border-radius:28px; padding:16px; box-shadow:0 8px 24px rgba(0,0,0,0.01), 0 0 0 1px rgba(255,255,255,0.3) inset; display:flex; flex-direction:column; }
+    .device-selector { display:flex; gap:4px; background:rgba(255,255,255,0.3); padding:4px; border-radius:60px; margin-bottom:14px; align-self:flex-start; border:1px solid rgba(255,255,255,0.2); }
+    .device-selector span { padding:4px 16px; border-radius:40px; font-size:11px; font-weight:500; color:#64748b; transition:0.1s; cursor:default; }
+    .device-selector span.active { background:white; box-shadow:0 2px 8px rgba(0,0,0,0.02); color:#0f172a; }
+
+    .preview-nav { display:flex; gap:6px; margin-bottom:14px; background:rgba(255,255,255,0.2); padding:4px 6px; border-radius:40px; align-self:flex-start; }
+    .preview-nav span { padding:4px 14px; border-radius:30px; font-size:11px; font-weight:500; color:#64748b; cursor:default; transition:0.1s; }
+    .preview-nav span.active { background:white; color:#0f172a; box-shadow:0 2px 6px rgba(0,0,0,0.01); }
+
+    .phone-mock { background:white; border-radius:28px; padding:24px 22px 28px; box-shadow:0 20px 40px -12px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.01); flex:1; max-width:420px; margin:0 auto; width:100%; }
+    .preview-cover { width:100%; height:90px; background:linear-gradient(135deg,#f0f4ff,#e6edfe); border-radius:16px; margin-bottom:14px; display:flex; align-items:center; justify-content:center; color:#2563eb; font-weight:500; font-size:13px; }
+    .preview-title { font-size:20px; font-weight:600; letter-spacing:-0.3px; }
+    .preview-desc { font-size:13px; color:#475569; margin-bottom:16px; }
+    .progress-bar { height:5px; background:#e9edf2; border-radius:12px; margin:6px 0 14px; }
+    .progress-fill { height:5px; width:35%; background:#2563eb; border-radius:12px; }
+    .question-preview { font-weight:600; font-size:17px; margin-bottom:12px; }
+    .answer-option { background:rgba(248,250,252,0.5); border:1px solid #f1f5f9; border-radius:14px; padding:10px 16px; margin-bottom:8px; backdrop-filter:blur(2px); transition:0.1s; cursor:default; font-weight:450; font-size:14px; display:flex; align-items:center; gap:10px; }
+    .answer-option:hover { background:white; border-color:#d1d9e6; }
+    .btn-continue { background:#0f172a; color:white; border:none; border-radius:40px; padding:11px 0; width:100%; font-weight:500; font-size:14px; margin-top:10px; transition:0.1s; cursor:default; }
+    .btn-continue:hover { background:#1e293b; }
+    .question-indicator { text-align:center; font-size:12px; color:#94a3b8; margin-top:12px; }
+
+    /* ===== RESULT PREMIUM SCREEN ===== */
+    .result-screen { text-align:center; padding:8px 0; }
+    .result-screen .big-icon { font-size:48px; color:#2563eb; margin-bottom:10px; }
+    .result-screen h3 { font-size:22px; font-weight:600; }
+    .result-screen p { color:#475569; font-size:14px; margin:6px 0 14px; }
+    .result-screen .recs { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:12px 0; }
+    .result-screen .recs span { background:#f1f5f9; padding:4px 14px; border-radius:30px; font-size:12px; }
+    .result-screen .testimonial { background:#f8fafc; border-radius:16px; padding:12px; font-size:13px; color:#334155; margin:12px 0; }
+
+    /* ===== TOOLTIP / BADGE ===== */
+    .badge-soft { background:rgba(37,99,235,0.04); color:#2563eb; font-size:10px; padding:2px 12px; border-radius:40px; font-weight:600; }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width:1024px) { .editor-grid { grid-template-columns:1fr; } .left-panel { max-height:600px; } }
+    @media (max-width:640px) { .topbar { flex-direction:column; align-items:stretch; } .topbar-left { flex-wrap:wrap; } .row-duo { grid-template-columns:1fr; } .tabs { gap:2px; } .tab { padding:6px 14px; font-size:11px; } .app { padding:14px; } }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="back"><i class="fas fa-arrow-left"></i> Volver</div>
+      <div class="brand"><i class="fas fa-cubes"></i> Landing Builder</div>
+      <div class="quiz-status"><span>Quiz de diagnóstico</span><span class="badge-draft">Borrador</span></div>
+    </div>
+    <div class="topbar-actions">
+      <div class="btn-ghost"><i class="fas fa-eye"></i> Vista previa</div>
+      <div class="btn-ghost"><i class="fas fa-copy"></i> Duplicar</div>
+      <div class="btn-ghost"><i class="fas fa-save"></i> Guardar</div>
+      <div class="btn-primary-sm"><i class="fas fa-rocket"></i> Publicar</div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" data-tab="content"><i class="fas fa-pen-fancy"></i> Content</button>
+    <button class="tab" data-tab="design"><i class="fas fa-palette"></i> Design</button>
+    <button class="tab" data-tab="logic"><i class="fas fa-code-branch"></i> Logic</button>
+    <button class="tab" data-tab="integrations"><i class="fas fa-plug"></i> Integrations</button>
+    <button class="tab" data-tab="settings"><i class="fas fa-sliders-h"></i> Settings</button>
+  </div>
+
+  <!-- EDITOR GRID -->
+  <div class="editor-grid">
+
+    <!-- LEFT PANEL -->
+    <div class="left-panel">
+
+      <!-- TAB: CONTENT -->
+      <div class="tab-content active" id="tab-content">
+        <!-- Preguntas -->
+        <div class="section-card">
+          <div class="section-title"><i class="fas fa-question-circle"></i> Preguntas</div>
+
+          <!-- Bloque 1 -->
+          <div class="question-block">
+            <div class="q-row">
+              <span class="q-drag"><i class="fas fa-grip-vertical"></i></span>
+              <span class="q-number">Pregunta 1</span>
+              <span class="q-type-badge"><i class="far fa-dot-circle"></i> Opción única</span>
+              <div class="q-actions">
+                <i class="fas fa-copy" title="Duplicar"></i>
+                <i class="fas fa-arrow-up" title="Mover arriba"></i>
+                <i class="fas fa-arrow-down" title="Mover abajo"></i>
+                <i class="fas fa-trash-alt" title="Eliminar"></i>
+                <i class="fas fa-chevron-up" title="Colapsar"></i>
+              </div>
+            </div>
+            <div class="q-collapsed-info">
+              <span><i class="far fa-circle"></i> 4 respuestas</span>
+              <span><i class="fas fa-tag"></i> Opción única</span>
+              <span><i class="fas fa-user"></i> Intermedio</span>
+            </div>
+            <div class="q-expanded">
+              <div class="field-group"><input value="¿Cuál es tu principal objetivo profesional?" placeholder="Enunciado" /></div>
+              <div class="answer-chips">
+                <div class="chip"><span class="dot" style="background:#3b82f6"></span><input class="chip-input" value="Crecimiento rápido" /><span class="profile-tag">Intermedio</span></div>
+                <div class="chip"><span class="dot" style="background:#8b5cf6"></span><input class="chip-input" value="Estabilidad" /><span class="profile-tag">Avanzado</span></div>
+                <div class="chip"><span class="dot" style="background:#f97316"></span><input class="chip-input" value="Aprender" /><span class="profile-tag">Principiante</span></div>
+                <div class="chip"><span class="dot" style="background:#14b8a6"></span><input class="chip-input" value="Liderar" /><span class="profile-tag">Experto</span></div>
+                <span class="chip-add"><i class="fas fa-plus"></i> Agregar</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bloque 2 -->
+          <div class="question-block">
+            <div class="q-row">
+              <span class="q-drag"><i class="fas fa-grip-vertical"></i></span>
+              <span class="q-number">Pregunta 2</span>
+              <span class="q-type-badge"><i class="fas fa-check-square"></i> Selección múltiple</span>
+              <div class="q-actions">
+                <i class="fas fa-copy"></i><i class="fas fa-arrow-up"></i><i class="fas fa-arrow-down"></i><i class="fas fa-trash-alt"></i><i class="fas fa-chevron-up"></i>
+              </div>
+            </div>
+            <div class="q-collapsed-info">
+              <span><i class="far fa-circle"></i> 3 respuestas</span>
+              <span><i class="fas fa-tag"></i> Múltiple</span>
+              <span><i class="fas fa-user"></i> Avanzado</span>
+            </div>
+            <div class="q-expanded">
+              <div class="field-group"><input value="¿Cómo manejas los plazos?" placeholder="Enunciado" /></div>
+              <div class="answer-chips">
+                <div class="chip"><span class="dot" style="background:#f97316"></span><input class="chip-input" value="Priorizo" /><span class="profile-tag">Avanzado</span></div>
+                <div class="chip"><span class="dot" style="background:#14b8a6"></span><input class="chip-input" value="Presión" /><span class="profile-tag">Intermedio</span></div>
+                <div class="chip"><span class="dot" style="background:#8b5cf6"></span><input class="chip-input" value="Delego" /><span class="profile-tag">Experto</span></div>
+                <span class="chip-add"><i class="fas fa-plus"></i> Agregar</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bloque 3 colapsado -->
+          <div class="question-block" style="opacity:0.75">
+            <div class="q-row">
+              <span class="q-drag"><i class="fas fa-grip-vertical"></i></span>
+              <span class="q-number">Pregunta 3</span>
+              <span class="q-type-badge"><i class="fas fa-toggle-on"></i> Sí / No</span>
+              <div class="q-actions"><i class="fas fa-copy"></i><i class="fas fa-arrow-up"></i><i class="fas fa-arrow-down"></i><i class="fas fa-trash-alt"></i><i class="fas fa-chevron-down"></i></div>
+            </div>
+            <div class="q-collapsed-info">
+              <span><i class="far fa-circle"></i> 2 respuestas</span>
+              <span><i class="fas fa-tag"></i> Sí/No</span>
+              <span><i class="fas fa-user"></i> Experto</span>
+            </div>
+            <div class="q-expanded" style="display:none"></div>
+          </div>
+
+          <!-- Bloque 4 -->
+          <div class="question-block">
+            <div class="q-row">
+              <span class="q-drag"><i class="fas fa-grip-vertical"></i></span>
+              <span class="q-number">Pregunta 4</span>
+              <span class="q-type-badge"><i class="fas fa-sliders-h"></i> Escala</span>
+              <div class="q-actions"><i class="fas fa-copy"></i><i class="fas fa-arrow-up"></i><i class="fas fa-arrow-down"></i><i class="fas fa-trash-alt"></i><i class="fas fa-chevron-up"></i></div>
+            </div>
+            <div class="q-collapsed-info">
+              <span><i class="far fa-circle"></i> 5 respuestas</span>
+              <span><i class="fas fa-tag"></i> Escala 1-5</span>
+              <span><i class="fas fa-user"></i> Principiante</span>
+            </div>
+            <div class="q-expanded">
+              <div class="field-group"><input value="Nivel de experiencia en marketing" placeholder="Enunciado" /></div>
+              <div class="answer-chips">
+                <div class="chip"><span class="dot" style="background:#22c55e"></span><input class="chip-input" value="1" /><span class="profile-tag">Principiante</span></div>
+                <div class="chip"><span class="dot" style="background:#3b82f6"></span><input class="chip-input" value="2" /><span class="profile-tag">Intermedio</span></div>
+                <div class="chip"><span class="dot" style="background:#f97316"></span><input class="chip-input" value="3" /><span class="profile-tag">Avanzado</span></div>
+                <span class="chip-add"><i class="fas fa-plus"></i> Agregar</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="btn-large-add"><i class="fas fa-plus-circle"></i> Agregar Pregunta</div>
+        </div>
+
+        <!-- Resultados -->
+        <div class="section-card">
+          <div class="section-title"><i class="fas fa-chart-pie"></i> Resultados</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div style="background:rgba(255,255,255,0.3);border-radius:16px;padding:12px;border:1px solid rgba(255,255,255,0.2)"><div style="font-weight:600;font-size:14px;">Principiante</div><div style="font-size:12px;color:#475569;">Inicia tu camino</div><div style="display:flex;gap:6px;margin-top:6px;font-size:12px;color:#94a3b8"><i class="fas fa-image"></i><i class="fas fa-palette"></i><i class="fas fa-link"></i></div></div>
+            <div style="background:rgba(255,255,255,0.3);border-radius:16px;padding:12px;border:1px solid rgba(255,255,255,0.2)"><div style="font-weight:600;font-size:14px;">Intermedio</div><div style="font-size:12px;color:#475569;">Base sólida</div><div style="display:flex;gap:6px;margin-top:6px;font-size:12px;color:#94a3b8"><i class="fas fa-image"></i><i class="fas fa-palette"></i><i class="fas fa-link"></i></div></div>
+            <div style="background:rgba(255,255,255,0.3);border-radius:16px;padding:12px;border:1px solid rgba(255,255,255,0.2)"><div style="font-weight:600;font-size:14px;">Avanzado</div><div style="font-size:12px;color:#475569;">Alto desempeño</div><div style="display:flex;gap:6px;margin-top:6px;font-size:12px;color:#94a3b8"><i class="fas fa-image"></i><i class="fas fa-palette"></i><i class="fas fa-link"></i></div></div>
+            <div style="background:rgba(255,255,255,0.3);border-radius:16px;padding:12px;border:1px solid rgba(255,255,255,0.2)"><div style="font-weight:600;font-size:14px;">Experto</div><div style="font-size:12px;color:#475569;">Referente</div><div style="display:flex;gap:6px;margin-top:6px;font-size:12px;color:#94a3b8"><i class="fas fa-image"></i><i class="fas fa-palette"></i><i class="fas fa-link"></i></div></div>
+          </div>
+          <div class="btn-large-add" style="margin-top:10px"><i class="fas fa-plus-circle"></i> Agregar Resultado</div>
+        </div>
+      </div>
+
+      <!-- TAB: DESIGN -->
+      <div class="tab-content" id="tab-design">
+        <div class="section-card">
+          <div class="section-title"><i class="fas fa-palette"></i> Información General</div>
+          <div class="field-group"><label><i class="fas fa-tag"></i> Nombre del Quiz</label><input value="Quiz de diagnóstico avanzado" /></div>
+          <div class="field-group"><label><i class="fas fa-subtitle"></i> Subtítulo</label><input value="Descubre tu perfil de liderazgo" /></div>
+          <div class="field-group"><label><i class="fas fa-align-left"></i> Descripción</label><input value="Responde 8 preguntas y obtén recomendaciones personalizadas." /></div>
+          <div class="row-duo">
+            <div class="field-group"><label><i class="fas fa-image"></i> Imagen portada</label><input value="https://picsum.photos/200/100" /></div>
+            <div class="field-group"><label><i class="fas fa-palette"></i> Color principal</label><input type="text" value="#2563eb" /></div>
+          </div>
+          <div class="row-duo">
+            <div class="field-group"><label><i class="fas fa-paint-brush"></i> Color botón</label><input value="#0f172a" /></div>
+            <div class="field-group"><label><i class="fas fa-font"></i> Tipografía</label><input value="Inter" /></div>
+          </div>
+        </div>
+        <div class="section-card">
+          <div class="section-title"><i class="fas fa-user-plus"></i> Captura de Leads</div>
+          <div class="switch-group">
+            <div class="switch-item"><div class="switch active"></div> Nombre</div>
+            <div class="switch-item"><div class="switch active"></div> Email</div>
+            <div class="switch-item"><div class="switch"></div> WhatsApp</div>
+            <div class="switch-item"><div class="switch"></div> Empresa</div>
+            <div class="switch-item"><div class="switch active"></div> GDPR</div>
+            <div class="switch-item"><div class="switch"></div> Resultado antes</div>
+            <div class="switch-item"><div class="switch active"></div> Resultado después</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: LOGIC -->
+      <div class="tab-content" id="tab-logic">
+        <div class="section-card">
+          <div class="section-title"><i class="fas fa-code-branch"></i> Flujo Lógico</div>
+          <div class="flow-container">
+            <div class="flow-node"><span class="node-label"><i class="fas fa-question-circle" style="color:#2563eb"></i> Pregunta 1</span><span class="node-badge">Opción única</span><span class="arrow"><i class="fas fa-arrow-down"></i></span></div>
+            <div class="flow-node" style="border-left-color:#8b5cf6"><span class="node-label"><i class="fas fa-arrow-right" style="color:#8b5cf6"></i> Si responde "Crecimiento"</span><span class="node-badge">→ Pregunta 3</span></div>
+            <div class="flow-node" style="border-left-color:#f97316"><span class="node-label"><i class="fas fa-arrow-right" style="color:#f97316"></i> Si responde "Estabilidad"</span><span class="node-badge">→ Resultado Intermedio</span></div>
+            <div class="flow-node" style="border-left-color:#14b8a6"><span class="node-label"><i class="fas fa-arrow-right" style="color:#14b8a6"></i> Si responde "Liderar"</span><span class="node-badge">→ Resultado Experto</span></div>
+            <div class="flow-node" style="border-left-color:#64748b"><span class="node-label"><i class="fas fa-flag-checkered"></i> Resultado Final</span><span class="node-badge">Perfil</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: INTEGRATIONS -->
+      <div class="tab-content" id="tab-integrations">
+        <div class="section-card">
+          <div class="section-title"><i class="fas fa-plug"></i> Integraciones</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.3);padding:10px 14px;border-radius:14px;"><i class="fas fa-envelope" style="color:#2563eb;width:20px"></i><span style="flex:1;font-weight:500;">Mailchimp</span><span class="badge-soft">Conectado</span></div>
+            <div style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.3);padding:10px 14px;border-radius:14px;"><i class="fas fa-bolt" style="color:#f97316;width:20px"></i><span style="flex:1;font-weight:500;">Zapier</span><span class="badge-soft">Activo</span></div>
+            <div style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.3);padding:10px 14px;border-radius:14px;"><i class="fas fa-slack" style="color:#8b5cf6;width:20px"></i><span style="flex:1;font-weight:500;">Slack</span><span class="badge-soft">No conectado</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: SETTINGS -->
+      <div class="tab-content" id="tab-settings">
+        <div class="section-card">
+          <div class="section-title"><i class="fas fa-sliders-h"></i> Configuración</div>
+          <div class="switch-group">
+            <div class="switch-item"><div class="switch active"></div> Barra progreso</div>
+            <div class="switch-item"><div class="switch active"></div> Porcentaje</div>
+            <div class="switch-item"><div class="switch"></div> Volver atrás</div>
+            <div class="switch-item"><div class="switch active"></div> Animaciones</div>
+            <div class="switch-item"><div class="switch"></div> Confetti final</div>
+            <div class="switch-item"><div class="switch active"></div> Contador preguntas</div>
+            <div class="switch-item"><div class="switch"></div> Redirección automática</div>
+            <div class="switch-item"><div class="switch active"></div> Pantalla final personalizada</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FLOATING ADD BLOCK -->
+      <div class="floating-add">
+        <div class="btn-float"><i class="fas fa-plus-circle"></i> Add Block</div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL: Vista previa -->
+    <div class="right-panel">
+      <div class="device-selector">
+        <span class="active"><i class="fas fa-desktop"></i> Desktop</span>
+        <span><i class="fas fa-tablet-alt"></i> Tablet</span>
+        <span><i class="fas fa-mobile-alt"></i> Mobile</span>
+      </div>
+      <div class="preview-nav">
+        <span class="active">Bienvenida</span>
+        <span>Pregunta</span>
+        <span>Captura</span>
+        <span>Resultado</span>
+      </div>
+
+      <div class="phone-mock">
+        <!-- Pantalla Bienvenida -->
+        <div class="preview-cover"><i class="fas fa-image" style="margin-right:8px"></i> Portada del quiz</div>
+        <div class="preview-title">Quiz de diagnóstico</div>
+        <div class="preview-desc">Descubre tu perfil de liderazgo respondiendo 8 preguntas</div>
+        <div class="progress-bar"><div class="progress-fill"></div></div>
+        <div class="question-preview">¿Cuál es tu principal objetivo profesional?</div>
+        <div class="answer-option"><i class="fas fa-circle" style="color:#3b82f6;font-size:10px"></i> Crecimiento rápido</div>
+        <div class="answer-option"><i class="fas fa-circle" style="color:#8b5cf6;font-size:10px"></i> Estabilidad y equilibrio</div>
+        <div class="answer-option"><i class="fas fa-circle" style="color:#f97316;font-size:10px"></i> Aprender nuevas habilidades</div>
+        <div class="answer-option"><i class="fas fa-circle" style="color:#14b8a6;font-size:10px"></i> Liderar equipos</div>
+        <button class="btn-continue"><i class="fas fa-arrow-right" style="margin-right:8px"></i> Continuar</button>
+        <div class="question-indicator">Pregunta 2 de 8</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    // Tabs
+    const tabs = document.querySelectorAll('.tab');
+    const contents = {
+      content: document.getElementById('tab-content'),
+      design: document.getElementById('tab-design'),
+      logic: document.getElementById('tab-logic'),
+      integrations: document.getElementById('tab-integrations'),
+      settings: document.getElementById('tab-settings')
+    };
+    tabs.forEach(tab => {
+      tab.addEventListener('click', function() {
+        tabs.forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        const key = this.dataset.tab;
+        Object.keys(contents).forEach(k => contents[k].classList.remove('active'));
+        if (contents[key]) contents[key].classList.add('active');
+      });
+    });
+
+    // Switches
+    document.querySelectorAll('.switch').forEach(sw => {
+      sw.addEventListener('click', function(e) {
+        e.stopPropagation();
+        this.classList.toggle('active');
+      });
+    });
+
+    // Device selector
+    document.querySelectorAll('.device-selector span').forEach(el => {
+      el.addEventListener('click', function() {
+        document.querySelectorAll('.device-selector span').forEach(s => s.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+
+    // Preview nav
+    document.querySelectorAll('.preview-nav span').forEach(el => {
+      el.addEventListener('click', function() {
+        document.querySelectorAll('.preview-nav span').forEach(s => s.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+  })();
+</script>
+</body>
+</html>
