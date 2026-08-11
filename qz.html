@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz Builder — Editor Premium</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    /* ===== BASE ===== */
+    * { margin:0; padding:0; box-sizing:border-box; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    body { background:#f4f6fa; display:flex; justify-content:center; padding:20px; min-height:100vh; color:#0f172a; }
+    .app { max-width:1600px; width:100%; background:rgba(255,255,255,0.5); backdrop-filter:blur(2px); border-radius:40px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.08), 0 0 0 1px rgba(255,255,255,0.6) inset; padding:20px 24px 32px; transition:all 0.2s; }
+    
+    /* ===== TOP BAR ===== */
+    .topbar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px 12px; padding-bottom:18px; border-bottom:1px solid rgba(0,0,0,0.03); margin-bottom:20px; }
+    .topbar-left { display:flex; align-items:center; gap:20px; }
+    .back { font-size:13px; font-weight:500; color:#1e293b; background:rgba(255,255,255,0.5); padding:6px 16px 6px 14px; border-radius:40px; border:1px solid rgba(0,0,0,0.02); cursor:pointer; transition:0.15s; }
+    .back i { margin-right:8px; font-size:12px; }
+    .back:hover { background:white; box-shadow:0 4px 12px rgba(0,0,0,0.02); }
+    .brand { display:flex; align-items:center; gap:8px; font-weight:600; font-size:15px; letter-spacing:-0.01em; color:#0f172a; }
+    .brand i { color:#2563eb; font-size:17px; }
+    .quiz-status { display:flex; align-items:center; gap:12px; background:rgba(255,255,255,0.3); padding:4px 16px 4px 20px; border-radius:40px; border:1px solid rgba(255,255,255,0.4); }
+    .quiz-status span { font-weight:500; font-size:14px; }
+    .badge-draft { background:#e9edf2; color:#1e293b; font-size:10px; font-weight:600; padding:2px 14px; border-radius:30px; text-transform:uppercase; letter-spacing:0.3px; }
+    .topbar-actions { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+    .btn-ghost { background:rgba(255,255,255,0.4); border:1px solid rgba(0,0,0,0.02); padding:6px 16px; border-radius:30px; font-size:12px; font-weight:500; color:#1e293b; display:flex; align-items:center; gap:6px; transition:0.12s; cursor:pointer; backdrop-filter:blur(2px); }
+    .btn-ghost i { font-size:12px; opacity:0.5; }
+    .btn-ghost:hover { background:white; box-shadow:0 4px 12px rgba(0,0,0,0.02); }
+    .btn-primary-sm { background:#0f172a; color:white; border:none; padding:6px 20px; border-radius:30px; font-size:12px; font-weight:500; display:flex; align-items:center; gap:6px; transition:0.12s; cursor:pointer; box-shadow:0 2px 8px rgba(15,23,42,0.06); }
+    .btn-primary-sm i { font-size:12px; }
+    .btn-primary-sm:hover { background:#1e293b; transform:scale(0.97); }
+
+    /* ===== TABS ===== */
+    .tabs { display:flex; gap:4px; background:rgba(255,255,255,0.3); padding:4px; border-radius:60px; margin-bottom:20px; border:1px solid rgba(255,255,255,0.2); backdrop-filter:blur(2px); flex-wrap:wrap; }
+    .tab { padding:8px 20px; border-radius:40px; font-size:13px; font-weight:500; color:#64748b; transition:0.15s; cursor:pointer; background:transparent; border:none; }
+    .tab i { margin-right:8px; font-size:12px; }
+    .tab.active { background:white; color:#0f172a; box-shadow:0 2px 8px rgba(0,0,0,0.02); }
+    .tab:hover:not(.active) { color:#0f172a; }
+
+    /* ===== EDITOR GRID ===== */
+    .editor-grid { display:grid; grid-template-columns:1fr 1.1fr; gap:28px; }
+    
+    /* ===== LEFT PANEL ===== */
+    .left-panel { background:rgba(255,255,255,0.3); backdrop-filter:blur(4px); border-radius:28px; padding:20px 20px 24px; box-shadow:0 8px 24px rgba(0,0,0,0.01), 0 0 0 1px rgba(255,255,255,0.4) inset; max-height:780px; overflow-y:auto; scroll-behavior:smooth; }
+    .left-panel::-webkit-scrollbar { width:4px; }
+    .left-panel::-webkit-scrollbar-thumb { background:#d1d9e6; border-radius:12px; }
+    
+    .tab-content { display:none; animation:fadeSlide 0.25s ease; }
+    .tab-content.active { display:block; }
+    @keyframes fadeSlide { from { opacity:0.3; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+
+    .section-card { background:rgba(255,255,255,0.5); backdrop-filter:blur(2px); border-radius:20px; padding:18px 20px; margin-bottom:18px; box-shadow:0 4px 12px rgba(0,0,0,0.01), 0 0 0 1px rgba(255,255,255,0.3) inset; transition:0.15s; }
+    .section-card:hover { box-shadow:0 8px 20px rgba(0,0,0,0.01), 0 0 0 1px rgba(255,255,255,0.5) inset; }
+    .section-title { font-size:12px; font-weight:600; letter-spacing:0.4px; text-transform:uppercase; color:#64748b; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+    .section-title i { font-size:12px; opacity:0.5; }
+
+    .field-group { display:flex; flex-direction:column; gap:4px; margin-bottom:14px; }
+    .field-group label { font-size:11px; font-weight:500; color:#475569; display:flex; align-items:center; gap:6px; }
+    .field-group label i { font-size:11px; color:#94a3b8; }
+    .field-group input, .field-group select { background:rgba(255,255,255,0.7); border:1px solid #e9edf2; border-radius:14px; padding:9px 14px; font-size:13px; transition:0.12s; color:#0f172a; width:100%; outline:none; }
+    .field-group input:focus, .field-group select:focus { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,0.04); background:white; }
+    .row-duo { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+    /* switches modernos */
+    .switch-group { display:flex; flex-wrap:wrap; gap:10px 20px; margin:4px 0 2px; }
+    .switch-item { display:flex; align-items:center; gap:10px; font-size:13px; font-weight:450; color:#1e293b; }
+    .switch { width:36px; height:20px; background:#d1d9e6; border-radius:40px; position:relative; transition:0.2s; cursor:pointer; flex-shrink:0; }
+    .switch.active { background:#2563eb; }
+    .switch::after { content:''; width:16px; height:16px; background:white; border-radius:50%; position:absolute; top:2px; left:2px; transition:0.2s cubic-bezier(0.34,1.2,0.64,1); box-shadow:0 2px 4px rgba(0,0,0,0.06); }
+    .switch.active::after { left:18px; }
+
+    /* ===== QUESTION BLOCKS ===== */
+    .question-block { background:rgba(255,255,255,0.5); backdrop-filter:blur(2px); border-radius:18px; padding:14px 16px; margin-bottom:14px; border:1px solid rgba(255,255,255,0.4); transition:0.12s; }
+    .question-block:hover { border-color:rgba(37,99,235,0.08); }
+    .q-row { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+    .q-drag { color:#cbd5e1; font-size:16px; cursor:default; letter-spacing:-2px; }
+    .q-number { font-weight:600; font-size:13px; color:#0f172a; background:rgba(37,99,235,0.04); padding:2px 14px; border-radius:30px; }
+    .q-type-badge { font-size:10px; font-weight:600; color:#475569; background:#f1f5f9; padding:2px 12px; border-radius:30px; }
+    .q-actions { display:flex; gap:6px; margin-left:auto; }
+    .q-actions i { color:#94a3b8; font-size:13px; transition:0.1s; cursor:pointer; padding:4px; border-radius:8px; }
+    .q-actions i:hover { color:#0f172a; background:rgba(0,0,0,0.02); }
+    .q-collapsed-info { display:flex; gap:16px; margin-top:6px; font-size:12px; color:#64748b; }
+    .q-collapsed-info span { display:flex; align-items:center; gap:4px; }
+    .q-expanded { margin-top:12px; display:block; }
+    .q-expanded .field-group { margin-bottom:8px; }
+    
+    /* answer chips */
+    .answer-chips { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 4px; }
+    .chip { display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,0.6); border:1px solid #e9edf2; border-radius:40px; padding:4px 14px 4px 10px; font-size:12px; font-weight:450; transition:0.1s; cursor:default; }
+    .chip .dot { width:10px; height:10px; border-radius:20px; flex-shrink:0; }
+    .chip .profile-tag { font-size:10px; font-weight:500; color:#64748b; background:rgba(0,0,0,0.02); padding:0 8px; border-radius:20px; }
+    .chip:hover { background:white; border-color:#cbd5e1; }
+    .chip-input { background:transparent; border:none; padding:2px 0; font-size:12px; width:80px; outline:none; }
+    .chip-add { background:transparent; border:1px dashed #cbd5e1; border-radius:40px; padding:4px 14px; font-size:12px; color:#64748b; cursor:pointer; transition:0.1s; }
+    .chip-add:hover { border-color:#2563eb; color:#2563eb; background:rgba(37,99,235,0.02); }
+
+    .btn-large-add { background:rgba(255,255,255,0.3); border:1px dashed #cbd5e1; border-radius:60px; padding:12px 20px; font-weight:500; color:#1e293b; display:flex; align-items:center; justify-content:center; gap:10px; font-size:14px; transition:0.12s; cursor:pointer; }
+    .btn-large-add i { color:#2563eb; }
+    .btn-large-add:hover { background:white; border-color:#2563eb; }
+
+    /* ===== LOGIC FLOW ===== */
+    .flow-container { display:flex; flex-direction:column; gap:12px; padding:8px 0; }
+    .flow-node { background:rgba(255,255,255,0.6); border-radius:16px; padding:14px 18px; border-left:3px solid #2563eb; display:flex; align-items:center; gap:12px; }
+    .flow-node .arrow { color:#94a3b8; font-size:18px; }
+    .flow-node .node-label { font-weight:500; font-size:14px; }
+    .flow-node .node-badge { font-size:10px; background:#f1f5f9; padding:2px 12px; border-radius:30px; color:#475569; }
+
+    /* ===== BLOCK LIBRARY FLOATING ===== */
+    .floating-add { position:sticky; bottom:10px; display:flex; justify-content:center; margin-top:12px; }
+    .btn-float { background:#0f172a; color:white; border:none; padding:10px 24px; border-radius:60px; font-weight:500; font-size:14px; display:flex; align-items:center; gap:10px; box-shadow:0 8px 24px rgba(15,23,42,0.12); transition:0.15s; cursor:pointer; }
+    .btn-float i { font-size:14px; }
+    .btn-float:hover { transform:scale(0.97); background:#1e293b; }
+
+    /* ===== RIGHT PANEL ===== */
+    .right-panel { background:rgba(255,255,255,0.2); backdrop-filter:blur(4px); border-radius:28px; padding:16px; box-shadow:0 8px 24px rgba(0,0,0,0.01), 0 0 0 1px rgba(255,255,255,0.3) inset; display:flex; flex-direction:column; }
+    .device-selector { display:flex; gap:4px; background:rgba(255,255,255,0.3); padding:4px; border-radius:60px; margin-bottom:14px; align-self:flex-start; border:1px solid rgba(255,255,255,0.2); }
+    .device-selector span { padding:4px 16px; border-radius:40px; font-size:11px; font-weight:500; color:#64748b; transition:0.1s; cursor:pointer; }
+    .device-selector span.active { background:white; box-shadow:0 2px 8px rgba(0,0,0,0.02); color:#0f172a; }
+
+    .preview-nav { display:flex; gap:6px; margin-bottom:14px; background:rgba(255,255,255,0.2); padding:4px 6px; border-radius:40px; align-self:flex-start; }
+    .preview-nav span { padding:4px 14px; border-radius:30px; font-size:11px; font-weight:500; color:#64748b; cursor:pointer; transition:0.1s; }
+    .preview-nav span.active { background:white; color:#0f172a; box-shadow:0 2px 6px rgba(0,0,0,0.01); }
+
+    .phone-mock { background:white; border-radius:28px; padding:24px 22px 28px; box-shadow:0 20px 40px -12px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.01); flex:1; max-width:420px; margin:0 auto; width:100%; }
+    .preview-cover { width:100%; height:90px; background:linear-gradient(135deg,#f0f4ff,#e6edfe); border-radius:16px; margin-bottom:14px; display:flex; align-items:center; justify-content:center; color:#2563eb; font-weight:500; font-size:13px; }
+    .preview-title { font-size:20px; font-weight:600; letter-spacing:-0.3px; }
+    .preview-desc { font-size:13px; color:#475569; margin-bottom:16px; }
+    .progress-bar { height:5px; background:#e9edf2; border-radius:12px; margin:6px 0 14px; }
+    .progress-fill { height:5px; width:35%; background:#2563eb; border-radius:12px; }
+    .question-preview { font-weight:600; font-size:17px; margin-bottom:12px; }
+    .answer-option { background:rgba(248,250,252,0.5); border:1px solid #f1f5f9; border-radius:14px; padding:10px 16px; margin-bottom:8px; backdrop-filter:blur(2px); transition:0.1s; cursor:default; font-weight:450; font-size:14px; display:flex; align-items:center; gap:10px; }
+    .answer-option:hover { background:white; border-color:#d1d9e6; }
+    .btn-continue { background:#0f172a; color:white; border:none; border-radius:40px; padding:11px 0; width:100%; font-weight:500; font-size:14px; margin-top:10px; transition:0.1s; cursor:default; }
+    .btn-continue:hover { background:#1e293b; }
+    .question-indicator { text-align:center; font-size:12px; color:#94a3b8; margin-top:12px; }
+
+    /* ===== RESULT PREMIUM SCREEN ===== */
+    .result-screen { text-align:center; padding:8px 0; }
+    .result-screen .big-icon { font-size:48px; color:#2563eb; margin-bottom:10px; }
+    .result-screen h3 { font-size:22px; font-weight:600; }
+    .result-screen p { color:#475569; font-size:14px; margin:6px 0 14px; }
+    .result-screen .recs { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:12px 0; }
+    .result-screen .recs span { background:#f1f5f9; padding:4px 14px; border-radius:30px; font-size:12px; }
+    .result-screen .testimonial { background:#f8fafc; border-radius:16px; padding:12px; font-size:13px; color:#334155; margin:12px 0; }
+
+    /* ===== TOOLTIP / BADGE ===== */
+    .badge-soft { background:rgba(37,99,235,0.04); color:#2563eb; font-size:10px; padding:2px 12px; border-radius:40px; font-weight:600; }
+
+    /* ===== PRICING SECTION ===== */
+    .pricing-section { margin-top:40px; padding:20px; background:rgba(255,255,255,0.3); border-radius:28px; backdrop-filter:blur(4px); }
+    .pricing-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-top:20px; }
+    .plan-card { background:white; border-radius:20px; padding:24px 20px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.04); transition:0.2s; border:1px solid rgba(0,0,0,0.02); }
+    .plan-card:hover { transform:translateY(-4px); box-shadow:0 12px 24px rgba(0,0,0,0.06); }
+    .plan-card.popular { border:2px solid #2563eb; position:relative; }
+    .plan-card .popular-badge { background:#2563eb; color:white; padding:2px 16px; border-radius:40px; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; display:inline-block; margin-bottom:8px; }
+    .plan-card h3 { font-size:20px; margin-bottom:4px; }
+    .plan-card .price { font-size:32px; font-weight:700; margin:8px 0; }
+    .plan-card .price span { font-size:14px; font-weight:400; color:#64748b; }
+    .plan-card .features { list-style:none; padding:0; margin:16px 0; font-size:13px; color:#475569; }
+    .plan-card .features li { padding:4px 0; display:flex; align-items:center; justify-content:center; gap:6px; }
+    .plan-card .features li i { font-size:11px; }
+    .plan-card .features li .fa-check { color:#22c55e; }
+    .plan-card .features li .fa-times { color:#94a3b8; }
+    .btn-plan { margin-top:16px; background:#0f172a; color:white; border:none; padding:10px 24px; border-radius:40px; font-weight:600; font-size:14px; cursor:pointer; transition:0.15s; width:100%; }
+    .btn-plan:hover { background:#1e293b; transform:scale(0.97); }
+    .btn-plan.free { background:#e9edf2; color:#0f172a; }
+    .btn-plan.free:hover { background:#d1d9e6; }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width:1024px) { .editor-grid { grid-template-columns:1fr; } .left-panel { max-height:600px; } }
+    @media (max-width:640px) { 
+      .topbar { flex-direction:column; align-items:stretch; } 
+      .topbar-left { flex-wrap:wrap; } 
+      .row-duo { grid-template-columns:1fr; } 
+      .tabs { gap:2px; } 
+      .tab { padding:6px 14px; font-size:11px; } 
+      .app { padding:14px; }
+      .pricing-grid { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="back"><i class="fas fa-arrow-left"></i> Dashboard</div>
+      <div class="brand"><i class="fas fa-cubes"></i> Quiz Builder</div>
+      <div class="quiz-status"><span>Diagnostic Quiz</span><span class="badge-draft">Draft</span></div>
+    </div>
+    <div class="topbar-actions">
+      <div class="btn-ghost"><i class="fas fa-eye"></i> Preview</div>
+      <div class="btn-ghost"><i class="fas fa-copy"></i> Duplicate</div>
+      <div class="btn-ghost"><i class="fas fa-save"></i> Save</div>
+      <div class="btn-primary-sm"><i class="fas fa-rocket"></i> Publish</div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" data-tab="content"><i class="fas fa-pen-fancy"></i> Content</button>
+    <button class="tab" data-tab="design"><i class="fas fa-palette"></i> Design</button>
+    <button class="tab" data-tab="logic"><i class="fas fa-code-branch"></i> Logic</button>
+    <button class="tab" data-tab="integrations"><i class="fas fa-plug"></i> Integrations</button>
+    <button class="tab" data-tab="settings"><i class="fas fa-sliders-h"></i> Settings</button>
+  </div>
+
+  <!-- EDITOR GRID -->
+  <div class="editor-grid">
+
+    <!-- LEFT PANEL -->
+    <div class="left-panel">
+
+      <!-- TAB: CONTENT -->
+      <div class="tab-content active" id="tab-content">
+        <!-- Questions -->
+        <div class="section-card">
+          <div class="section-title"><i class="fas fa-question-circle"></i> Questions</div>
+
+          <!-- Block 1 -->
+          <div class="question-block">
+            <div class="q-row">
+              <span class="q-drag"><i class="fas fa-grip-vertical"></i></span>
+              <span class="q-number">Question 1</span>
+              <span class="q-type-badge"><i class="far fa-dot-circle"></i> Single choice</span>
+              <div class="q-actions">
+                <i class="fas fa-copy" title="Duplicate"></i>
+                <i class="fas fa-arrow-up" title="Move up"></i>
+                <i class="fas fa-arrow-down" title="Move down"></i>
+                <i class="fas fa-trash-alt" title="Delete"></i>
+                <i class="fas fa-chevron-up" title="Collapse"></i>
+              </div>
+            </div>
+            <div class="q-collapsed-info">
+              <span><i class="far fa-circle"></i> 4 answers</span>
+              <span><i class="fas fa-tag"></i> Single choice</span>
+              <span><i class="fas fa-user"></i> Intermediate</span>
+            </div>
+            <div class="q-expanded">
+              <div class="field-group"><input value="What is your main professional goal?" placeholder="Question text" /></div>
+              <div class="answer-chips">
+                <div class="chip"><span class="dot" style="background:#3b82f6"></span><input class="chip-input" value="Fast growth" /><span class="profile-tag">Intermediate</span></div>
+                <div class="chip"><span class="dot" style="background:#8b5cf6"></span><input class="chip-input" value="Stability" /><span class="profile-tag">Advanced</span></div>
+                <div class="chip"><span class="dot" style="background:#f97316"></span><input class="chip-input" value="Learn" /><span class="profile-tag">Beginner</span></div>
+                <div class="chip"><span class="dot" style="background:#14b8a6"></span><input class="chip-input" value="Lead" /><span class="profile-tag">Expert</span></div>
+                <span class="chip-add"><i class="fas fa-plus"></i> Add</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Block 2 -->
+          <div class="question-block">
+            <div class="q-row">
+              <span class="q-drag"><i class="fas fa-grip-vertical"></i></span>
+              <span class="q-number">Question 2</span>
+              <span class="q-type-badge"><i class="fas fa-check-square"></i> Multiple choice</span>
+              <div class="q-actions">
+                <i class="fas fa-copy"></i><i class="fas fa-arrow-up"></i><i class="fas fa-arrow-down"></i><i class="fas fa-trash-alt"></i><i class="fas fa-chevron-up"></i>
+              </div>
+            </div>
+            <div class="q-collapsed-info">
+              <span><i class="far fa-circle"></i> 3 answers</span>
+              <span><i class="fas fa-tag"></i> Multiple</span>
+              <span><i class="fas fa-user"></i> Advanced</span>
+            </div>
+            <div class="q-expanded">
+              <div class="field-group"><input value="How do you handle deadlines?" placeholder="Question text" /></div>
+              <div class="answer-chips">
+                <div class="chip"><span class="dot" style="background:#f97316"></span><input class="chip-input" value="Prioritize" /><span class="profile-tag">Advanced</span></div>
+                <div class="chip"><span class="dot" style="background:#14b8a6"></span><input class="chip-input" value="Pressure" /><span class="profile-tag">Intermediate</span></div>
+                <div class="chip"><span class="dot" style="background:#8b5cf6"></span><input class="chip-input" value="Delegate" /><span class="profile-tag">Expert</span></div>
+                <span class="chip-add"><i class="fas fa-plus"></i> Add</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Block 3 collapsed -->
+          <div class="question-block" style="opacity:0.75">
+            <div class="q-row">
+              <span class="q-drag"><i class="fas fa-grip-vertical"></i></span>
+              <span class="q-number">Question 3</span>
+              <span class="q-type-badge"><i class="fas fa-toggle-on"></i> Yes / No</span>
+              <div class="q-actions"><i class="fas fa-copy"></i><i class="fas fa-arrow-up"></i><i class="fas fa-arrow-down"></i><i class="fas fa-trash-alt"></i><i class="fas fa-chevron-down"></i></div>
+            </div>
+            <div class="q-collapsed-info">
+              <span><i class="far fa-circle"></i> 2 answers</span>
+              <span><i class="fas fa-tag"></i> Yes/No</span>
+              <span><i class="fas fa-user"></i> Expert</span>
+            </div>
+            <div class="q-expanded" style="display:none"></div>
+          </div>
+
+          <!-- Block 4 -->
+          <div class="question-block">
+            <div class="q-row">
+              <span class="q-drag"><i class="fas fa-grip-vertical"></i></span>
+              <span class="q-number">Question 4</span>
+              <span class="q-type-badge"><i class="fas fa-sliders-h"></i> Scale</span>
+              <div class="q-actions"><i class="fas fa-copy"></i><i class="fas fa-arrow-up"></i><i class="fas fa-arrow-down"></i><i class="fas fa-trash-alt"></i><i class="fas fa-chevron-up"></i></div>
+            </div>
+            <div class="q-collapsed-info">
+              <span><i class="far fa-circle"></i> 5 answers</span>
+              <span><i class="fas fa-tag"></i> Scale 1-5</span>
+              <span><i class="fas fa-user"></i> Beginner</span>
+            </div>
+            <div class="q-expanded">
+              <div class="field-group"><input value="Marketing experience level" placeholder="Question text" /></div>
+              <div class="answer-chips">
+                <div class="chip"><span class="dot" style="background:#22c55e"></span><input class="chip-input" value="1" /><span class="profile-tag">Beginner</span></div>
+                <div class="chip"><span class="dot" style="background:#3b82f6"></span><input class="chip-input" value="2" /><span class="profile-tag">Intermediate</span></div>
+                <div class="chip"><span class="dot" style="background:#f97316"></span><input class="chip-input" value="3" /><span class="profile-tag">Advanced</span></div>
+                <span class="chip-add"><i class="fas fa-plus"></i> Add</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="btn-large-add"><i class="fas fa-plus-circle"></i> Add Question</div>
+        </div>
+
+        <!-- Results -->
+        <div class="section-card">
+          <div class="section-title"><i class="fas fa-chart-pie"></i> Results</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div style="background:rgba(255,255,255,0.3);border-radius:16px;padding:12px;border:1px solid rgba(255,255,255,0.2)"><div style="font-weight:600;font-size:14px;">Beginner</div><div style="font-size:12px;color:#475569;">Start your journey</div><div style="display:flex;gap:6px;margin-top:6px;font-size:12px;color:#94a3b8"><i class="fas fa-image"></i><i class="fas fa-palette"></i><i class="fas fa-link"></i></div></div>
+            <div style="background:rgba(255,255,255,0.3);border-radius:16px;padding:12px;border:1px solid rgba(255,255,255,0.2)"><div style="font-weight:600;font-size:14px;">Intermediate</div><div style="font-size:12px;color:#475569;">Solid foundation</div><div style="display:flex;gap:6px;margin-top:6px;font-size:12px;color:#94a3b8"><i class="fas fa-image"></i><i class="fas fa-palette"></i><i class="fas fa-link"></i></div></div>
+            <div style="background:rgba(255,255,255,0.3);border-radius:16px;padding:12px;border:1px solid rgba(255,255,255,0.2)"><div style="font-weight:600;font-size:14px;">Advanced</div><div style="font-size:12px;color:#475569;">High performance</div><div style="display:flex;gap:6px;margin-top:6px;font-size:12px;color:#94a3b8"><i class="fas fa-image"></i><i class="fas fa-palette"></i><i class="fas fa-link"></i></div></div>
+            <div style="background:rgba(255,255,255,0.3);border-radius:16px;padding:12px;border:1px solid rgba(255,255,255,0.2)"><div style="font-weight:600;font-size:14px;">Expert</div><div style="font-size:12px;color:#475569;">Reference</div><div style="display:flex;gap:6px;margin-top:6px;font-size:12px;color:#94a3b8"><i class="fas fa-image"></i><i class="fas fa-palette"></i><i class="fas fa-link"></i></div></div>
+          </div>
+          <div class="btn-large-add" style="margin-top:10px"><i class="fas fa-plus-circle"></i> Add Result</div>
+        </div>
+      </div>
+
+      <!-- TAB: DESIGN -->
+      <div class="tab-content" id="tab-design">
+        <div class="section-card">
+          <div class="section-title"><i class="fas fa-palette"></i> General Info</div>
+          <div class="field-group"><label><i class="fas fa-tag"></i> Quiz Name</label><input value="Advanced Diagnostic Quiz" /></div>
+          <div class="field-group"><label><i class="fas fa-subtitle"></i> Subtitle</label><input value="Discover your leadership profile" /></div>
+          <div class="field-group"><label><i class="fas fa-align-left"></i> Description</label><input value="Answer 8 questions and get personalized recommendations." /></div>
+          <div class="row-duo">
+            <div class="field-group"><label><i class="fas fa-image"></i> Cover Image</label><input value="https://picsum.photos/200/100" /></div>
+            <div class="field-group"><label><i class="fas fa-palette"></i> Primary Color</label><input type="text" value="#2563eb" /></div>
+          </div>
+          <div class="row-duo">
+            <div class="field-group"><label><i class="fas fa-paint-brush"></i> Button Color</label><input value="#0f172a" /></div>
+            <div class="field-group"><label><i class="fas fa-font"></i> Typography</label><input value="Inter" /></div>
+          </div>
+        </div>
+        <div class="section-card">
+          <div class="section-title"><i class="fas fa-user-plus"></i> Lead Capture</div>
+          <div class="switch-group">
+            <div class="switch-item"><div class="switch active"></div> Name</div>
+            <div class="switch-item"><div class="switch active"></div> Email</div>
+            <div class="switch-item"><div class="switch"></div> WhatsApp</div>
+            <div class="switch-item"><div class="switch"></div> Company</div>
+            <div class="switch-item"><div class="switch active"></div> GDPR</div>
+            <div class="switch-item"><div class="switch"></div> Result before</div>
+            <div class="switch-item"><div class="switch active"></div> Result after</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: LOGIC -->
+      <div class="tab-content" id="tab-logic">
+        <div class="section-card">
+          <div class="section-title"><i class="fas fa-code-branch"></i> Logic Flow</div>
+          <div class="flow-container">
+            <div class="flow-node"><span class="node-label"><i class="fas fa-question-circle" style="color:#2563eb"></i> Question 1</span><span class="node-badge">Single choice</span><span class="arrow"><i class="fas fa-arrow-down"></i></span></div>
+            <div class="flow-node" style="border-left-color:#8b5cf6"><span class="node-label"><i class="fas fa-arrow-right" style="color:#8b5cf6"></i> If "Growth"</span><span class="node-badge">→ Question 3</span></div>
+            <div class="flow-node" style="border-left-color:#f97316"><span class="node-label"><i class="fas fa-arrow-right" style="color:#f97316"></i> If "Stability"</span><span class="node-badge">→ Intermediate Result</span></div>
+            <div class="flow-node" style="border-left-color:#14b8a6"><span class="node-label"><i class="fas fa-arrow-right" style="color:#14b8a6"></i> If "Lead"</span><span class="node-badge">→ Expert Result</span></div>
+            <div class="flow-node" style="border-left-color:#64748b"><span class="node-label"><i class="fas fa-flag-checkered"></i> Final Result</span><span class="node-badge">Profile</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: INTEGRATIONS -->
+      <div class="tab-content" id="tab-integrations">
+        <div class="section-card">
+          <div class="section-title"><i class="fas fa-plug"></i> Integrations</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.3);padding:10px 14px;border-radius:14px;"><i class="fas fa-envelope" style="color:#2563eb;width:20px"></i><span style="flex:1;font-weight:500;">Mailchimp</span><span class="badge-soft">Connected</span></div>
+            <div style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.3);padding:10px 14px;border-radius:14px;"><i class="fas fa-bolt" style="color:#f97316;width:20px"></i><span style="flex:1;font-weight:500;">Zapier</span><span class="badge-soft">Active</span></div>
+            <div style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.3);padding:10px 14px;border-radius:14px;"><i class="fas fa-slack" style="color:#8b5cf6;width:20px"></i><span style="flex:1;font-weight:500;">Slack</span><span class="badge-soft">Not connected</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: SETTINGS -->
+      <div class="tab-content" id="tab-settings">
+        <div class="section-card">
+          <div class="section-title"><i class="fas fa-sliders-h"></i> Settings</div>
+          <div class="switch-group">
+            <div class="switch-item"><div class="switch active"></div> Progress bar</div>
+            <div class="switch-item"><div class="switch active"></div> Percentage</div>
+            <div class="switch-item"><div class="switch"></div> Go back</div>
+            <div class="switch-item"><div class="switch active"></div> Animations</div>
+            <div class="switch-item"><div class="switch"></div> Final confetti</div>
+            <div class="switch-item"><div class="switch active"></div> Question counter</div>
+            <div class="switch-item"><div class="switch"></div> Auto-redirect</div>
+            <div class="switch-item"><div class="switch active"></div> Custom final screen</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FLOATING ADD BLOCK -->
+      <div class="floating-add">
+        <div class="btn-float"><i class="fas fa-plus-circle"></i> Add Block</div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL: Vista previa -->
+    <div class="right-panel">
+      <div class="device-selector">
+        <span class="active"><i class="fas fa-desktop"></i> Desktop</span>
+        <span><i class="fas fa-tablet-alt"></i> Tablet</span>
+        <span><i class="fas fa-mobile-alt"></i> Mobile</span>
+      </div>
+      <div class="preview-nav">
+        <span class="active">Welcome</span>
+        <span>Question</span>
+        <span>Capture</span>
+        <span>Result</span>
+      </div>
+
+      <div class="phone-mock">
+        <!-- Pantalla Bienvenida -->
+        <div class="preview-cover"><i class="fas fa-image" style="margin-right:8px"></i> Quiz cover</div>
+        <div class="preview-title">Diagnostic Quiz</div>
+        <div class="preview-desc">Discover your leadership profile by answering 8 questions</div>
+        <div class="progress-bar"><div class="progress-fill"></div></div>
+        <div class="question-preview">What is your main professional goal?</div>
+        <div class="answer-option"><i class="fas fa-circle" style="color:#3b82f6;font-size:10px"></i> Fast growth</div>
+        <div class="answer-option"><i class="fas fa-circle" style="color:#8b5cf6;font-size:10px"></i> Stability and balance</div>
+        <div class="answer-option"><i class="fas fa-circle" style="color:#f97316;font-size:10px"></i> Learn new skills</div>
+        <div class="answer-option"><i class="fas fa-circle" style="color:#14b8a6;font-size:10px"></i> Lead teams</div>
+        <button class="btn-continue"><i class="fas fa-arrow-right" style="margin-right:8px"></i> Continue</button>
+        <div class="question-indicator">Question 2 of 8</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PRICING SECTION ===== -->
+  <div class="pricing-section">
+    <h2 style="text-align:center;font-size:24px;font-weight:600;letter-spacing:-0.5px;">Choose your plan</h2>
+    <p style="text-align:center;color:#64748b;margin-top:4px;">Scale your business with the right plan for you</p>
+    
+    <div class="pricing-grid">
+      
+      <!-- FREE -->
+      <div class="plan-card">
+        <h3>Free</h3>
+        <div class="price">$0 <span>/month</span></div>
+        <ul class="features">
+          <li><i class="fas fa-check" style="color:#22c55e;"></i> 3 quizzes</li>
+          <li><i class="fas fa-check" style="color:#22c55e;"></i> 5 questions per quiz</li>
+          <li><i class="fas fa-check" style="color:#22c55e;"></i> 50 responses/month</li>
+          <li><i class="fas fa-check" style="color:#22c55e;"></i> Basic templates</li>
+          <li><i class="fas fa-times" style="color:#94a3b8;"></i> Custom branding</li>
+          <li><i class="fas fa-times" style="color:#94a3b8;"></i> Integrations</li>
+        </ul>
+        <button class="btn-plan free" data-plan="free">Current plan</button>
+      </div>
+      
+      <!-- PRO -->
+      <div class="plan-card popular">
+        <div class="popular-badge"><i class="fas fa-star"></i> Most popular</div>
+        <h3>Pro</h3>
+        <div class="price">$29 <span>/month</span></div>
+        <ul class="features">
+          <li><i class="fas fa-check" style="color:#22c55e;"></i> 20 quizzes</li>
+          <li><i class="fas fa-check" style="color:#22c55e;"></i> 15 questions per quiz</li>
+          <li><i class="fas fa-check" style="color:#22c55e;"></i> 500 responses/month</li>
+          <li><i class="fas fa-check" style="color:#22c55e;"></i> Premium templates</li>
+          <li><i class="fas fa-check" style="color:#22c55e;"></i> No branding</li>
+          <li><i class="fas fa-check" style="color:#22c55e;"></i> Mailchimp + Zapier</li>
+        </ul>
+        <button class="btn-plan" data-plan="pro">Subscribe</button>
+      </div>
+      
+      <!-- BUSINESS -->
+      <div class="plan-card">
+        <h3>Business</h3>
+        <div class="price">$79 <span>/month</span></div>
+        <ul class="features">
+          <li><i class="fas fa-check" style="color:#22c55e;"></i> Unlimited quizzes</li>
+          <li><i class="fas fa-check" style="color:#22c55e;"></i> Unlimited questions</li>
+          <li><i class="fas fa-check" style="color:#22c55e;"></i> 5,000 responses/month</li>
+          <li><i class="fas fa-check" style="color:#22c55e;"></i> Conditional logic</li>
+          <li><i class="fas fa-check" style="color:#22c55e;"></i> Full integrations</li>
+          <li><i class="fas fa-check" style="color:#22c55e;"></i> Priority support</li>
+        </ul>
+        <button class="btn-plan" data-plan="business">Subscribe</button>
+      </div>
+      
+      <!-- ENTERPRISE -->
+      <div class="plan-card">
+        <h3>Enterprise</h3>
+        <div class="price">Custom</div>
+        <ul class="features">
+          <li><i class="fas fa-check" style="color:#22c55e;"></i> Everything included</li>
+          <li><i class="fas fa-check" style="color:#22c55e;"></i> On-premise / Private cloud</li>
+          <li><i class="fas fa-check" style="color:#22c55e;"></i> SLA guaranteed</li>
+          <li><i class="fas fa-check" style="color:#22c55e;"></i> Dedicated team</li>
+          <li><i class="fas fa-check" style="color:#22c55e;"></i> Full customization</li>
+          <li><i class="fas fa-check" style="color:#22c55e;"></i> 24/7 support</li>
+        </ul>
+        <button class="btn-plan" data-plan="enterprise">Contact</button>
+      </div>
+      
+    </div>
+  </div>
+  
+</div>
+
+<script>
+  (function() {
+    // ===== TABS =====
+    const tabs = document.querySelectorAll('.tab');
+    const contents = {
+      content: document.getElementById('tab-content'),
+      design: document.getElementById('tab-design'),
+      logic: document.getElementById('tab-logic'),
+      integrations: document.getElementById('tab-integrations'),
+      settings: document.getElementById('tab-settings')
+    };
+    tabs.forEach(tab => {
+      tab.addEventListener('click', function() {
+        tabs.forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        const key = this.dataset.tab;
+        Object.keys(contents).forEach(k => contents[k].classList.remove('active'));
+        if (contents[key]) contents[key].classList.add('active');
+      });
+    });
+
+    // ===== SWITCHES =====
+    document.querySelectorAll('.switch').forEach(sw => {
+      sw.addEventListener('click', function(e) {
+        e.stopPropagation();
+        this.classList.toggle('active');
+      });
+    });
+
+    // ===== DEVICE SELECTOR =====
+    document.querySelectorAll('.device-selector span').forEach(el => {
+      el.addEventListener('click', function() {
+        document.querySelectorAll('.device-selector span').forEach(s => s.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+
+    // ===== PREVIEW NAV =====
+    document.querySelectorAll('.preview-nav span').forEach(el => {
+      el.addEventListener('click', function() {
+        document.querySelectorAll('.preview-nav span').forEach(s => s.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+
+    // ===== PRICING BUTTONS =====
+    document.querySelectorAll('.btn-plan').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const plan = this.dataset.plan;
+        
+        if (plan === 'free') {
+          alert('✅ You are currently on the Free plan');
+          return;
+        }
+        
+        if (plan === 'enterprise') {
+          alert('📞 Contact sales: sales@quizbuilder.com');
+          // window.location.href = '/contact';
+          return;
+        }
+        
+        // Redirect to checkout (Stripe/Paddle)
+        alert(`🔄 Redirecting to checkout for ${plan} plan...`);
+        // window.location.href = `/api/checkout?plan=${plan}`;
+        console.log(`Checkout for plan: ${plan}`);
+      });
+    });
+
+    // ===== CHIP ADD =====
+    document.querySelectorAll('.chip-add').forEach(addBtn => {
+      addBtn.addEventListener('click', function() {
+        const chipsContainer = this.parentElement;
+        const newChip = document.createElement('div');
+        newChip.className = 'chip';
+        newChip.innerHTML = `
+          <span class="dot" style="background:#64748b"></span>
+          <input class="chip-input" placeholder="New option" />
+          <span class="profile-tag">No profile</span>
+        `;
+        chipsContainer.insertBefore(newChip, this);
+        newChip.querySelector('.chip-input').focus();
+      });
+    });
+
+    // ===== QUESTION ACTIONS =====
+    document.querySelectorAll('.q-actions i').forEach(action => {
+      action.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const icon = this.className;
+        if (icon.includes('fa-copy')) {
+          alert('📋 Duplicate question');
+        } else if (icon.includes('fa-trash-alt')) {
+          if (confirm('Delete this question?')) {
+            this.closest('.question-block').remove();
+          }
+        } else if (icon.includes('fa-arrow-up')) {
+          const block = this.closest('.question-block');
+          const prev = block.previousElementSibling;
+          if (prev && prev.classList.contains('question-block')) {
+            block.parentNode.insertBefore(block, prev);
+          }
+        } else if (icon.includes('fa-arrow-down')) {
+          const block = this.closest('.question-block');
+          const next = block.nextElementSibling;
+          if (next && next.classList.contains('question-block')) {
+            block.parentNode.insertBefore(next, block);
+          }
+        } else if (icon.includes('fa-chevron-up') || icon.includes('fa-chevron-down')) {
+          const expanded = this.closest('.question-block').querySelector('.q-expanded');
+          if (expanded) {
+            const isHidden = expanded.style.display === 'none';
+            expanded.style.display = isHidden ? 'block' : 'none';
+            this.className = isHidden ? 'fas fa-chevron-up' : 'fas fa-chevron-down';
+          }
+        }
+      });
+    });
+
+    // ===== LARGE ADD BUTTONS =====
+    document.querySelectorAll('.btn-large-add').forEach(btn => {
+      btn.addEventListener('click', function() {
+        if (this.textContent.includes('Question')) {
+          alert('➕ Add new question');
+        } else if (this.textContent.includes('Result')) {
+          alert('📊 Add new result');
+        }
+      });
+    });
+
+    // ===== FLOATING ADD BLOCK =====
+    document.querySelector('.btn-float')?.addEventListener('click', function() {
+      alert('🧱 Add new block');
+    });
+
+    // ===== TOP BAR ACTIONS =====
+    document.querySelectorAll('.topbar-actions .btn-ghost, .topbar-actions .btn-primary-sm').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const text = this.textContent.trim();
+        if (text.includes('Preview')) alert('👁️ Open preview');
+        else if (text.includes('Duplicate')) alert('📋 Duplicate quiz');
+        else if (text.includes('Save')) alert('💾 Quiz saved (simulated)');
+        else if (text.includes('Publish')) alert('🚀 Quiz published');
+      });
+    });
+
+    // ===== DASHBOARD BUTTON =====
+    document.querySelector('.back')?.addEventListener('click', function() {
+      alert('🔙 Back to dashboard');
+      // window.location.href = '/dashboard';
+    });
+
+    console.log('✅ Quiz Builder ready for backend connection');
+    console.log('📌 Required endpoints:');
+    console.log('  POST /api/quizzes');
+    console.log('  GET  /api/quizzes/:id');
+    console.log('  PUT  /api/quizzes/:id');
+    console.log('  DELETE /api/quizzes/:id');
+    console.log('  POST /api/checkout (Stripe)');
+    console.log('  POST /api/auth/login');
+    console.log('  POST /api/auth/register');
+  })();
+</script>
+
+</body>
+</html>
